@@ -1,99 +1,193 @@
-import {App, Editor, MarkdownView, Modal, Notice, Plugin} from 'obsidian';
-import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from "./settings";
+import { Plugin } from 'obsidian';
+import { Extension } from '@codemirror/state';
+import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from '@codemirror/view';
+import { DEFAULT_SETTINGS, WhitespacePluginSettings, WhitespaceSettingTab } from './settings';
 
-// Remember to rename these classes and interfaces!
+// Custom widget for newline display
+class NewlineWidget extends WidgetType {
+	toDOM(): HTMLElement {
+		const span = document.createElement('span');
+		span.className = 'cm-whitespace-char cm-whitespace-newline';
+		span.setAttribute('data-ws-type', 'newline');
+		return span;
+	}
+}
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class ShowWhitespacePlugin extends Plugin {
+	settings: WhitespacePluginSettings;
+	private editorExtension: Extension[] = [];
 
 	async onload() {
 		await this.loadSettings();
 
-		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('dice', 'Sample', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
+		// Register CodeMirror 6 editor extension
+		this.editorExtension = this.createEditorExtension();
+		this.registerEditorExtension(this.editorExtension);
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status bar text');
+		// Apply CSS classes to body
+		this.updateBodyClasses();
 
-		// This adds a simple command that can be triggered anywhere
+		// Add command to toggle whitespace visibility
 		this.addCommand({
-			id: 'open-modal-simple',
-			name: 'Open modal (simple)',
+			id: 'toggle-whitespace-visibility',
+			name: 'Toggle whitespace visualization on/off',
 			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'replace-selected',
-			name: 'Replace selected content',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				editor.replaceSelection('Sample editor command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-modal-complex',
-			name: 'Open modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-				return false;
+				this.settings.enabled = !this.settings.enabled;
+				void this.saveSettings();
 			}
 		});
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			new Notice("Click");
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
-
+		// Add settings tab
+		this.addSettingTab(new WhitespaceSettingTab(this.app, this));
 	}
 
 	onunload() {
+		// Clean up body classes
+		document.body.classList.remove(
+			'whitespace-plugin-enabled',
+			'whitespace-hide-newline',
+			'whitespace-hide-tab',
+			'whitespace-hide-space',
+			'whitespace-hide-single-space',
+			'whitespace-hide-trailing-space',
+			'whitespace-show-strict-line-break'
+		);
+	}
+
+	createEditorExtension(): Extension[] {
+		const getSettings = () => this.settings;
+
+		// Create ViewPlugin that adds decorations for whitespace
+		const whitespaceDecorator = ViewPlugin.fromClass(
+			class {
+				decorations: DecorationSet;
+
+				constructor(view: EditorView) {
+					this.decorations = this.buildDecorations(view);
+				}
+
+				update(update: ViewUpdate) {
+					// Rebuild decorations when document changes or viewport scrolls
+					if (update.docChanged || update.viewportChanged) {
+						this.decorations = this.buildDecorations(update.view);
+					}
+				}
+
+				buildDecorations(view: EditorView): DecorationSet {
+					// Don't decorate if plugin disabled
+					if (!getSettings().enabled) {
+						return Decoration.none;
+					}
+
+					const decorations = [];
+					const { from, to } = view.viewport;
+
+					// Iterate through visible lines only
+					for (let pos = from; pos <= to; ) {
+						const line = view.state.doc.lineAt(pos);
+						const lineText = line.text;
+
+						// Process each character in line
+						for (let i = 0; i < lineText.length; i++) {
+							const char = lineText[i];
+							const charPos = line.from + i;
+
+							if (char === ' ') {
+								// Count consecutive spaces
+								let spaceCount = 1;
+								while (i + spaceCount < lineText.length && lineText[i + spaceCount] === ' ') {
+									spaceCount++;
+								}
+
+								// Determine space type
+								const isTrailing = i + spaceCount === lineText.length;
+								const isStrictLineBreak = isTrailing && spaceCount === 2;
+
+								// Create decoration for each space
+								for (let j = 0; j < spaceCount; j++) {
+									const classes = ['cm-whitespace-char'];
+
+									// Add count-specific class (capped at 16)
+									if (spaceCount === 1) {
+										classes.push('cm-whitespace-single');
+									} else {
+										classes.push(`cm-whitespace-multiple-${Math.min(spaceCount, 16)}`);
+									}
+
+									if (isTrailing) {
+										classes.push('cm-whitespace-trailing');
+									}
+
+									if (isStrictLineBreak) {
+										classes.push('cm-whitespace-strict-break');
+									}
+
+									decorations.push(
+										Decoration.mark({
+											class: classes.join(' '),
+											attributes: { 'data-ws-type': 'space' }
+										}).range(charPos + j, charPos + j + 1)
+									);
+								}
+
+								// Skip already-processed spaces
+								i += spaceCount - 1;
+
+							} else if (char === '\t') {
+								decorations.push(
+									Decoration.mark({
+										class: 'cm-whitespace-char cm-whitespace-tab',
+										attributes: { 'data-ws-type': 'tab' }
+									}).range(charPos, charPos + 1)
+								);
+							}
+						}
+
+						// Add newline marker at end of line (except final line)
+						if (line.to < view.state.doc.length) {
+							decorations.push(
+								Decoration.widget({
+									widget: new NewlineWidget(),
+									side: 1
+								}).range(line.to)
+							);
+						}
+
+						pos = line.to + 1;
+					}
+
+					return Decoration.set(decorations, true);
+				}
+			},
+			{
+				decorations: (value) => value.decorations
+			}
+		);
+
+		return [whitespaceDecorator];
+	}
+
+	updateBodyClasses() {
+		const { enabled, showNewline, showSingleSpace, showSpace, showTab, showTrailingSpace, showStrictLineBreak } = this.settings;
+		const classList = document.body.classList;
+
+		classList.toggle('whitespace-plugin-enabled', enabled);
+		classList.toggle('whitespace-hide-newline', !showNewline);
+		classList.toggle('whitespace-hide-tab', !showTab);
+		classList.toggle('whitespace-hide-space', !showSpace);
+		classList.toggle('whitespace-hide-single-space', !showSingleSpace);
+		classList.toggle('whitespace-hide-trailing-space', !showTrailingSpace);
+		classList.toggle('whitespace-show-strict-line-break', showStrictLineBreak);
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<MyPluginSettings>);
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<WhitespacePluginSettings>);
 	}
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-}
-
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		let {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
+		this.updateBodyClasses();
+		// Trigger editor refresh
+		this.app.workspace.updateOptions();
 	}
 }
