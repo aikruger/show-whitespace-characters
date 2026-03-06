@@ -1,8 +1,124 @@
-/*
+/* ============================================
+   Show Whitespace Characters Plugin Styles
+   ============================================ */
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+/* Base whitespace character styling */
+.cm-whitespace-char {
+	position: relative;
+}
 
-If your plugin does not need CSS, delete this file.
+.cm-whitespace-char::before {
+	position: absolute;
+	pointer-events: none;
+	color: var(--text-faint);
+	font-size: 0.85em;
+	opacity: 0.6;
+}
 
-*/
+/* Space character - middle dot */
+.cm-whitespace-char[data-ws-type="space"]::before {
+	content: '·';
+}
+
+/* Tab character - right arrow */
+.cm-whitespace-tab::before {
+	content: '→';
+	color: var(--text-muted);
+}
+
+/* Newline character - return symbol */
+.cm-whitespace-newline::before {
+	content: '↵';
+	color: var(--text-muted);
+	margin-left: 2px;
+}
+
+/* Trailing spaces - distinct warning color */
+.cm-whitespace-trailing::before {
+	color: var(--text-error);
+	opacity: 0.8;
+}
+
+/* Strict line break (two spaces + newline) */
+.cm-whitespace-strict-break::before {
+	content: '⏎';
+	color: var(--text-accent);
+	font-weight: bold;
+	opacity: 0.9;
+}
+
+/* ============================================
+   Visibility Controls via Body Classes
+   ============================================ */
+
+/* Hide when plugin disabled */
+body:not(.whitespace-plugin-enabled) .cm-whitespace-char::before {
+	content: none !important;
+}
+
+/* Hide specific whitespace types */
+body.whitespace-hide-space .cm-whitespace-char[data-ws-type="space"]::before {
+	content: none;
+}
+
+body.whitespace-hide-single-space .cm-whitespace-single::before {
+	content: none;
+}
+
+body.whitespace-hide-trailing-space .cm-whitespace-trailing::before {
+	content: none;
+}
+
+body.whitespace-hide-tab .cm-whitespace-tab::before {
+	content: none;
+}
+
+body.whitespace-hide-newline .cm-whitespace-newline::before {
+	content: none;
+}
+
+/* Only show strict line break symbol when setting enabled */
+body:not(.whitespace-show-strict-line-break) .cm-whitespace-strict-break::before {
+	content: '·';
+	color: var(--text-faint);
+	font-weight: normal;
+	opacity: 0.6;
+}
+
+/* ============================================
+   Settings Panel Styles
+   ============================================ */
+
+.whitespace-plugin-settings h3 {
+	margin-top: 1.5em;
+	margin-bottom: 0.5em;
+	color: var(--text-normal);
+	font-size: 1.1em;
+	font-weight: 600;
+}
+
+.whitespace-setting-disabled {
+	opacity: 0.4;
+	pointer-events: none;
+}
+
+/* ============================================
+   Theme Compatibility
+   ============================================ */
+
+/* Ensure visibility in light and dark themes */
+.theme-light .cm-whitespace-char::before {
+	opacity: 0.5;
+}
+
+.theme-dark .cm-whitespace-char::before {
+	opacity: 0.6;
+}
+
+/* Accessibility: reduce motion */
+@media (prefers-reduced-motion: reduce) {
+	.cm-whitespace-char::before {
+		transition: none;
+	}
+}
+

@@ -1,90 +1,84 @@
-# Obsidian Sample Plugin
+# Show Whitespace Characters
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+An Obsidian plugin that visualizes invisible whitespace characters (spaces, tabs, newlines, and pilcrows) in the editor.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+## Features
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+- 🔹 **Space visualization**: Display middle dots (·) for space characters
+- ➡️ **Tab markers**: Show right arrows (→) for tab characters
+- ↵ **Newline indicators**: Display return symbols (↵) at line ends
+- ⚠️ **Trailing space detection**: Highlight trailing spaces in red
+- ⏎ **Strict line break support**: Special symbol for Markdown two-space line breaks
+- ⚙️ **Granular control**: Individual toggles for each whitespace type
+- 🎨 **Theme compatible**: Works with light and dark themes
 
-## First time developing plugins?
+## Installation
 
-Quick starting guide for new plugin devs:
+### From Obsidian Community Plugins (Coming Soon)
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+1. Open Settings > Community Plugins
+2. Search for "Show Whitespace Characters"
+3. Click Install
+4. Enable the plugin
 
-## Releasing new releases
+### Manual Installation
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+1. Download `main.js`, `manifest.json`, and `styles.css` from the latest release
+2. Create folder `YOUR_VAULT/.obsidian/plugins/show-whitespace-characters/`
+3. Copy the three files into that folder
+4. Reload Obsidian
+5. Enable the plugin in Settings > Community Plugins
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+## Usage
 
-## Adding your plugin to the community plugin list
+### Quick Toggle
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+Use the command palette (Ctrl/Cmd+P) and search for:
+- "Toggle whitespace visualization on/off"
 
-## How to use
+### Settings
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+Navigate to Settings > Show Whitespace Characters to customize:
 
-## Manually installing the plugin
+**Space Characters:**
+- Toggle all space characters on/off
+- Show/hide single spaces between words
+- Highlight trailing spaces at line ends
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+**Other Whitespace:**
+- Show/hide newline characters
+- Enable special symbol for strict line breaks (two spaces + newline)
+- Show/hide tab characters
 
-## Improve code quality with eslint
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
+## Whitespace Character Reference
 
-## Funding URL
+| Character | Symbol | Description |
+|-----------|--------|-------------|
+| Space | · | Middle dot for regular spaces |
+| Tab | → | Right arrow for tab characters |
+| Newline | ↵ | Return symbol at line ends |
+| Strict Break | ⏎ | Two spaces before newline (Markdown) |
+| Trailing Space | · (red) | Spaces at end of lines |
 
-You can include funding URLs where people who use your plugin can financially support it.
+## Compatibility
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+- **Obsidian Version**: 1.0.0+ required (CodeMirror 6)
+- **Mobile**: Fully supported on iOS and Android
+- **Modes**: Works in both Source and Live Preview modes
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
-```
+## Development
 
-If you have multiple URLs, you can also do:
+Built with:
+- TypeScript
+- CodeMirror 6 ViewPlugin API
+- Obsidian Plugin API
+- esbuild
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
-```
+## License
 
-## API Documentation
+MIT License - see LICENSE file for details
 
-See https://docs.obsidian.md
+## Support
+
+Report issues or request features at: https://github.com/aikruger/show-whitespace-characters/issues
+
